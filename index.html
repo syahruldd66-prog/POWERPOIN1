@@ -1,0 +1,1080 @@
+```html
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>WebPPT - Bikin & Mainkan Presentasi Gratis</title>
+    <!-- Tailwind CSS untuk UI modern -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Google Fonts untuk tipografi berkelas -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <!-- Font Awesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['"Plus Jakarta Sans"', 'sans-serif'],
+                        display: ['"Space Grotesk"', 'sans-serif'],
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        /* Custom scrollbar style */
+        ::-webkit-scrollbar {
+            width: 6px;
+            height: 6px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #0f172a;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #334155;
+            border-radius: 3px;
+        }
+        /* Lock aspect ratio on preview */
+        .preview-aspect {
+            aspect-ratio: 16/9;
+        }
+    </style>
+</head>
+<body class="bg-slate-950 text-slate-100 min-h-screen font-sans flex flex-col overflow-hidden select-none">
+
+    <!-- TOP NAVIGATION BAR -->
+    <header class="border-b border-slate-800 bg-slate-900/80 backdrop-blur-md px-6 py-3.5 flex items-center justify-between shrink-0 z-50">
+        <div class="flex items-center gap-3">
+            <div class="bg-gradient-to-tr from-blue-500 to-indigo-600 p-2.5 rounded-xl shadow-lg shadow-blue-500/20">
+                <i class="fa-solid fa-display text-xl text-white"></i>
+            </div>
+            <div>
+                <span class="font-display font-bold text-lg bg-gradient-to-r from-blue-400 to-indigo-400 bg-clip-text text-transparent">WebPPT Maker</span>
+                <span class="text-[10px] block text-slate-400 font-medium uppercase tracking-wider">Aplikasi Presentasi Bebas Ribet</span>
+            </div>
+        </div>
+        
+        <!-- Action Buttons -->
+        <div class="flex items-center gap-3">
+            <button onclick="enterPresentMode()" class="bg-slate-800 hover:bg-slate-700 text-slate-200 px-4 py-2 rounded-xl transition flex items-center gap-2 font-medium border border-slate-700 text-xs">
+                <i class="fa-solid fa-play text-emerald-400"></i> Mulai Presentasi (F11)
+            </button>
+            <button onclick="exportPresentation()" class="bg-gradient-to-r from-blue-500 to-indigo-600 hover:from-blue-600 hover:to-indigo-700 text-white px-5 py-2 rounded-xl transition flex items-center gap-2 font-semibold text-xs shadow-lg shadow-blue-500/25">
+                <i class="fa-solid fa-download"></i> Unduh File Presentasi (.html)
+            </button>
+        </div>
+    </header>
+
+    <!-- MAIN APP INTERFACE -->
+    <main class="flex-grow flex overflow-hidden">
+        
+        <!-- LEFT SIDEBAR: SLIDE THUMBNAILS & MANAGEMENT -->
+        <aside class="w-80 border-r border-slate-800 bg-slate-900/40 flex flex-col h-full shrink-0">
+            <!-- Save/Load Projects offline -->
+            <div class="p-4 border-b border-slate-800 flex items-center justify-between gap-2">
+                <button onclick="exportProjectJSON()" class="flex-1 bg-slate-800/80 hover:bg-slate-800 text-slate-300 py-2 px-3 rounded-lg text-[11px] font-medium border border-slate-700/50 flex items-center justify-center gap-1.5 transition">
+                    <i class="fa-solid fa-floppy-disk text-blue-400"></i> Simpan Proyek
+                </button>
+                <button onclick="triggerImport()" class="flex-1 bg-slate-800/80 hover:bg-slate-800 text-slate-300 py-2 px-3 rounded-lg text-[11px] font-medium border border-slate-700/50 flex items-center justify-center gap-1.5 transition">
+                    <i class="fa-solid fa-folder-open text-amber-400"></i> Buka Proyek
+                </button>
+                <input type="file" id="importFileInput" accept=".json" onchange="importProjectJSON(event)" class="hidden">
+            </div>
+
+            <!-- Slide Thumbnail List -->
+            <div class="flex-grow overflow-y-auto p-4 flex flex-col justify-between">
+                <div>
+                    <div class="flex items-center justify-between mb-3 px-1">
+                        <span class="text-xs font-semibold text-slate-400 uppercase tracking-wider">Daftar Slide</span>
+                        <span id="slideCountLabel" class="text-xs text-slate-500 font-bold">0 Slide</span>
+                    </div>
+                    <div id="slideThumbnails" class="space-y-2">
+                        <!-- Dynamic Thumbnails -->
+                    </div>
+                </div>
+
+                <!-- Create slide actions -->
+                <div class="mt-4 pt-4 border-t border-slate-800/50 space-y-2">
+                    <button onclick="addNewSlide()" class="w-full bg-slate-800 hover:bg-slate-750 border border-dashed border-slate-600 text-slate-300 p-2.5 rounded-xl text-xs transition flex items-center justify-center gap-2">
+                        <i class="fa-solid fa-plus text-blue-400"></i> Tambah Slide Baru
+                    </button>
+                    <div class="grid grid-cols-2 gap-2">
+                        <button onclick="duplicateActiveSlide()" class="bg-slate-900 hover:bg-slate-800 border border-slate-800 text-slate-400 p-2 rounded-xl text-[11px] transition flex items-center justify-center gap-1.5">
+                            <i class="fa-solid fa-copy text-slate-400"></i> Duplikat
+                        </button>
+                        <button onclick="deleteActiveSlide()" class="bg-rose-950/20 hover:bg-rose-950/40 border border-rose-900/50 text-rose-300 p-2 rounded-xl text-[11px] transition flex items-center justify-center gap-1.5">
+                            <i class="fa-solid fa-trash-can"></i> Hapus
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </aside>
+
+        <!-- CENTER SLIDE EDITOR CANVAS -->
+        <section class="flex-grow bg-slate-950 p-8 flex flex-col items-center justify-center relative overflow-y-auto">
+            
+            <!-- Dynamic Notification Info -->
+            <div class="absolute top-4 left-1/2 -translate-x-1/2 flex items-center gap-2 text-[11px] text-slate-400 bg-slate-900/90 border border-slate-800 px-4 py-2 rounded-full shadow-lg backdrop-blur-md">
+                <span class="inline-flex w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
+                <span>Klik langsung pada teks di dalam slide untuk mengedit konten!</span>
+            </div>
+
+            <!-- WYSIWYG PREVIEW CONTAINER (LOCK AT 16:9) -->
+            <div id="slideViewport" class="w-full max-w-4xl preview-aspect bg-slate-900 border border-slate-800/80 rounded-2xl shadow-2xl relative overflow-hidden transition-all duration-300 flex flex-col justify-between p-12">
+                <!-- Decorative Abstract Background Blobs -->
+                <div id="slideBackground" class="absolute inset-0 pointer-events-none transition-all duration-500"></div>
+
+                <!-- Interactive Edit Area -->
+                <div id="slideBody" class="relative z-10 w-full h-full flex flex-col justify-between select-text">
+                    <!-- Layout elements injected here -->
+                </div>
+            </div>
+
+            <!-- Active Slide Quick Navigator Controls -->
+            <div class="flex items-center gap-4 mt-6">
+                <button onclick="prevSlide()" class="bg-slate-900 hover:bg-slate-850 text-slate-300 p-2.5 rounded-xl border border-slate-800 hover:border-slate-700 transition">
+                    <i class="fa-solid fa-chevron-left"></i>
+                </button>
+                <div class="flex items-center gap-1.5">
+                    <span id="slideIndicator" class="text-xs font-semibold text-slate-400">Slide 1 / 1</span>
+                    <div class="h-3 w-px bg-slate-800 mx-1"></div>
+                    <button onclick="moveSlideUp()" title="Pindahkan ke Atas" class="text-slate-400 hover:text-white text-xs transition"><i class="fa-solid fa-arrow-up"></i></button>
+                    <button onclick="moveSlideDown()" title="Pindahkan ke Bawah" class="text-slate-400 hover:text-white text-xs transition"><i class="fa-solid fa-arrow-down"></i></button>
+                </div>
+                <button onclick="nextSlide()" class="bg-slate-900 hover:bg-slate-850 text-slate-300 p-2.5 rounded-xl border border-slate-800 hover:border-slate-700 transition">
+                    <i class="fa-solid fa-chevron-right"></i>
+                </button>
+            </div>
+        </section>
+
+        <!-- RIGHT SIDEBAR: DESIGN THEMES & SLIDE LAYOUTS -->
+        <aside class="w-80 border-l border-slate-800 bg-slate-900/40 p-5 flex flex-col gap-6 overflow-y-auto h-full shrink-0">
+            
+            <!-- Layout Switcher -->
+            <div>
+                <h3 class="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-3"><i class="fa-solid fa-table-cells-large text-blue-400"></i> Tata Letak Slide</h3>
+                <div class="space-y-1.5">
+                    <button onclick="changeActiveLayout('Title_Slide')" class="layout-btn w-full text-left bg-slate-950/40 hover:bg-slate-900 border border-slate-800 hover:border-slate-700 p-2.5 rounded-xl transition flex items-center gap-3">
+                        <i class="fa-solid fa-heading text-blue-400 text-sm w-5 text-center"></i>
+                        <div>
+                            <span class="text-xs font-medium block text-slate-200">Judul Utama Cover</span>
+                            <span class="text-[9px] text-slate-500 block">Sempurna untuk awal presentasi</span>
+                        </div>
+                    </button>
+                    <button onclick="changeActiveLayout('Tiled_Text_With_Icons')" class="layout-btn w-full text-left bg-slate-950/40 hover:bg-slate-900 border border-slate-800 hover:border-slate-700 p-2.5 rounded-xl transition flex items-center gap-3">
+                        <i class="fa-solid fa-cubes text-purple-400 text-sm w-5 text-center"></i>
+                        <div>
+                            <span class="text-xs font-medium block text-slate-200">Kartu Layanan/Fitur (Grid)</span>
+                            <span class="text-[9px] text-slate-500 block">Tiga poin ringkas berikon</span>
+                        </div>
+                    </button>
+                    <button onclick="changeActiveLayout('Two_Column_Tiled_Text')" class="layout-btn w-full text-left bg-slate-950/40 hover:bg-slate-900 border border-slate-800 hover:border-slate-700 p-2.5 rounded-xl transition flex items-center gap-3">
+                        <i class="fa-solid fa-columns text-emerald-400 text-sm w-5 text-center"></i>
+                        <div>
+                            <span class="text-xs font-medium block text-slate-200">Dua Kolom Komparasi</span>
+                            <span class="text-[9px] text-slate-500 block">Bandingkan konsep kiri & kanan</span>
+                        </div>
+                    </button>
+                    <button onclick="changeActiveLayout('Highlighted_Numbers')" class="layout-btn w-full text-left bg-slate-950/40 hover:bg-slate-900 border border-slate-800 hover:border-slate-700 p-2.5 rounded-xl transition flex items-center gap-3">
+                        <i class="fa-solid fa-arrow-up-right-dots text-amber-400 text-sm w-5 text-center"></i>
+                        <div>
+                            <span class="text-xs font-medium block text-slate-200">Metrik Utama & Detail</span>
+                            <span class="text-[9px] text-slate-500 block">Sorot pencapaian angka besar</span>
+                        </div>
+                    </button>
+                    <button onclick="changeActiveLayout('Quote')" class="layout-btn w-full text-left bg-slate-950/40 hover:bg-slate-900 border border-slate-800 hover:border-slate-700 p-2.5 rounded-xl transition flex items-center gap-3">
+                        <i class="fa-solid fa-quote-left text-pink-400 text-sm w-5 text-center"></i>
+                        <div>
+                            <span class="text-xs font-medium block text-slate-200">Kutipan / Quote Tokoh</span>
+                            <span class="text-[9px] text-slate-500 block">Kalimat inspiratif bermakna</span>
+                        </div>
+                    </button>
+                    <button onclick="changeActiveLayout('Q&A')" class="layout-btn w-full text-left bg-slate-950/40 hover:bg-slate-900 border border-slate-800 hover:border-slate-700 p-2.5 rounded-xl transition flex items-center gap-3">
+                        <i class="fa-solid fa-circle-question text-indigo-400 text-sm w-5 text-center"></i>
+                        <div>
+                            <span class="text-xs font-medium block text-slate-200">Tanya Jawab & Kontak</span>
+                            <span class="text-[9px] text-slate-500 block">Penutup dan info sosial media</span>
+                        </div>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Custom Styling Themes -->
+            <div>
+                <h3 class="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-3"><i class="fa-solid fa-palette text-blue-400"></i> Tema Desain</h3>
+                <div class="grid grid-cols-2 gap-2">
+                    <button onclick="setTheme('modern-dark')" class="theme-btn border-2 border-blue-500 rounded-xl p-2 text-left bg-slate-950 transition hover:bg-slate-900">
+                        <span class="text-xs font-semibold block text-slate-200">Neon Dark</span>
+                        <span class="text-[9px] text-slate-500 block">Futuristik & Elegan</span>
+                    </button>
+                    <button onclick="setTheme('nordic-clean')" class="theme-btn border border-slate-800 rounded-xl p-2 text-left bg-stone-100 transition hover:bg-stone-200">
+                        <span class="text-xs font-semibold block text-stone-900">Nordic Light</span>
+                        <span class="text-[9px] text-stone-600 block">Minimalis & Bersih</span>
+                    </button>
+                    <button onclick="setTheme('royal-gold')" class="theme-btn border border-slate-800 rounded-xl p-2 text-left bg-[#0c1424] transition hover:bg-slate-900">
+                        <span class="text-xs font-semibold block text-amber-200">Royal Gold</span>
+                        <span class="text-[9px] text-slate-500 block">Mewah & Berkelas</span>
+                    </button>
+                    <button onclick="setTheme('coral-playful')" class="theme-btn border border-slate-800 rounded-xl p-2 text-left bg-amber-50/80 transition hover:bg-amber-100">
+                        <span class="text-xs font-semibold block text-rose-500">Sunset Coral</span>
+                        <span class="text-[9px] text-slate-500 block">Cerah & Dinamis</span>
+                    </button>
+                </div>
+            </div>
+        </aside>
+    </main>
+
+    <!-- FULLSCREEN MODAL FOR PRESENTATIONS -->
+    <div id="presentModal" class="fixed inset-0 bg-slate-950 z-[100] hidden flex flex-col items-center justify-center select-none">
+        <!-- Render target locked at 1280x720 -->
+        <div id="presentViewport" class="w-[1280px] h-[720px] aspect-[16/9] bg-slate-900 rounded-none shadow-none relative overflow-hidden flex flex-col justify-between p-12">
+            <div id="presentBackground" class="absolute inset-0 pointer-events-none transition-all duration-500"></div>
+            <div id="presentBody" class="relative z-10 w-full h-full flex flex-col justify-between"></div>
+        </div>
+        
+        <!-- Floating controller when in Presentation Mode -->
+        <div class="absolute bottom-6 left-1/2 -translate-x-1/2 flex items-center gap-4 bg-slate-900/90 border border-slate-800 px-5 py-2.5 rounded-full shadow-2xl backdrop-blur-md opacity-30 hover:opacity-100 transition-opacity duration-300">
+            <button onclick="exitPresentMode()" class="text-xs text-rose-400 hover:text-rose-300 flex items-center gap-1.5 px-3 py-1 bg-rose-950/50 rounded-full border border-rose-800 transition">
+                <i class="fa-solid fa-circle-xmark"></i> Keluar
+            </button>
+            <div class="h-4 w-px bg-slate-700"></div>
+            <button onclick="prevSlidePresent()" class="text-slate-300 hover:text-white px-2 transition"><i class="fa-solid fa-chevron-left"></i></button>
+            <span id="presentIndicator" class="text-xs text-slate-400 font-semibold">1 / 1</span>
+            <button onclick="nextSlidePresent()" class="text-slate-300 hover:text-white px-2 transition"><i class="fa-solid fa-chevron-right"></i></button>
+        </div>
+    </div>
+
+    <!-- MAIN JAVASCRIPT SLIDE ENGINE -->
+    <script>
+        // Globals & Preset Themes
+        let currentTheme = 'modern-dark';
+        let activeSlideIndex = 0;
+        let isPresentMode = false;
+
+        // Default Slide Data
+        let presentationData = [
+            {
+                id: "slide_1",
+                layout: "Title_Slide",
+                title: "Solusi Presentasi Instan",
+                subtitle: "Cara cerdas menyusun dokumen presentasi profesional secara online, gratis, tanpa ribet dalam hitungan menit.",
+                points: [],
+                metric: "",
+                metricLabel: "",
+                quote: "",
+                author: "",
+                contactEmail: "",
+                contactWeb: ""
+            },
+            {
+                id: "slide_2",
+                layout: "Tiled_Text_With_Icons",
+                title: "Keunggulan Utama",
+                subtitle: "",
+                points: [
+                    { header: "Desain Instan", text: "Dilengkapi dengan tema profesional yang siap digunakan kapan saja.", icon: "fa-wand-magic-sparkles" },
+                    { header: "Edit Mudah", text: "Cukup klik pada bagian teks mana saja untuk mengedit konten secara realtime.", icon: "fa-keyboard" },
+                    { header: "Ekspor Offline", text: "Unduh file dalam bentuk dokumen interaktif yang bisa dijalankan tanpa koneksi internet.", icon: "fa-download" }
+                ],
+                metric: "",
+                metricLabel: "",
+                quote: "",
+                author: "",
+                contactEmail: "",
+                contactWeb: ""
+            },
+            {
+                id: "slide_3",
+                layout: "Two_Column_Tiled_Text",
+                title: "Fitur Penyusunan Slide",
+                subtitle: "",
+                points: [
+                    { header: "Pilihan Layout Fleksibel", text: "Ganti tata letak slide aktif Anda secara bebas kapan saja tanpa khawatir akan merusak isi konten Anda." },
+                    { header: "Penyimpanan Proyek Aman", text: "Unduh data proyek sebagai cadangan (file .json) untuk melanjutkan pengeditan kapan saja di masa depan." }
+                ],
+                metric: "",
+                metricLabel: "",
+                quote: "",
+                author: "",
+                contactEmail: "",
+                contactWeb: ""
+            },
+            {
+                id: "slide_4",
+                layout: "Highlighted_Numbers",
+                title: "Metrik Efisiensi Kerja",
+                subtitle: "",
+                points: [
+                    { header: "Hemat Waktu Signifikan", text: "Menghilangkan kerumitan mengatur margin, padding, serta tata letak warna manual yang memakan waktu." }
+                ],
+                metric: "10x",
+                metricLabel: "Lebih Cepat Dibanding PPT Tradisional",
+                quote: "",
+                author: "",
+                contactEmail: "",
+                contactWeb: ""
+            },
+            {
+                id: "slide_5",
+                layout: "Quote",
+                title: "Filosofi Sederhana",
+                subtitle: "",
+                points: [],
+                metric: "",
+                metricLabel: "",
+                quote: "Kesederhanaan adalah kecanggihan tertinggi dalam menyampaikan sebuah ide.",
+                author: "Steve Jobs",
+                contactEmail: "",
+                contactWeb: ""
+            },
+            {
+                id: "slide_6",
+                layout: "Q&A",
+                title: "Mari Berkolaborasi",
+                subtitle: "Silakan hubungi kami untuk pertanyaan, masukan, atau kerja sama pengembangan platform.",
+                points: [],
+                metric: "",
+                metricLabel: "",
+                quote: "",
+                author: "",
+                contactEmail: "support@webppt.id",
+                contactWeb: "www.webppt.id"
+            }
+        ];
+
+        const themes = {
+            'modern-dark': {
+                bgColor: 'bg-slate-900',
+                titleColor: 'text-white',
+                subtitleColor: 'text-slate-400',
+                accentColor: 'text-blue-400',
+                accentBg: 'bg-blue-500',
+                tileBg: 'bg-slate-950/60 border-slate-800',
+                titleFont: 'font-display',
+                bodyFont: 'font-sans',
+                glowEffect: 'bg-gradient-to-tr from-blue-500/10 to-indigo-600/5',
+                borderLeft: 'border-l-4 border-blue-500'
+            },
+            'nordic-clean': {
+                bgColor: 'bg-stone-50',
+                titleColor: 'text-stone-900',
+                subtitleColor: 'text-stone-600',
+                accentColor: 'text-emerald-700',
+                accentBg: 'bg-emerald-600',
+                tileBg: 'bg-white border-stone-200 shadow-sm',
+                titleFont: 'font-sans',
+                bodyFont: 'font-sans',
+                glowEffect: 'bg-gradient-to-b from-stone-200/20 to-stone-50',
+                borderLeft: 'border-l-4 border-emerald-700'
+            },
+            'royal-gold': {
+                bgColor: 'bg-[#0b121f]',
+                titleColor: 'text-amber-100',
+                subtitleColor: 'text-slate-300',
+                accentColor: 'text-amber-400',
+                accentBg: 'bg-amber-400',
+                tileBg: 'bg-[#121b2d]/80 border-amber-500/20',
+                titleFont: 'font-display',
+                bodyFont: 'font-sans',
+                glowEffect: 'bg-radial-gradient from-amber-500/5 to-transparent',
+                borderLeft: 'border-l-4 border-amber-400'
+            },
+            'coral-playful': {
+                bgColor: 'bg-amber-50/50',
+                titleColor: 'text-orange-950',
+                subtitleColor: 'text-orange-850/80',
+                accentColor: 'text-rose-500',
+                accentBg: 'bg-rose-500',
+                tileBg: 'bg-orange-50 border-orange-200 shadow-sm',
+                titleFont: 'font-display',
+                bodyFont: 'font-sans',
+                glowEffect: 'bg-radial-gradient from-rose-100/30 to-transparent',
+                borderLeft: 'border-l-4 border-rose-500'
+            }
+        };
+
+        // Render Slide List in Left Sidebar
+        function renderSlideList() {
+            const container = document.getElementById('slideThumbnails');
+            container.innerHTML = '';
+            
+            presentationData.forEach((slide, i) => {
+                const isActive = i === activeSlideIndex;
+                const activeClasses = isActive ? 'border-blue-500 bg-slate-850' : 'border-slate-800 hover:bg-slate-850';
+                
+                let iconClass = 'fa-heading';
+                if (slide.layout === 'Tiled_Text_With_Icons') iconClass = 'fa-cubes';
+                else if (slide.layout === 'Two_Column_Tiled_Text') iconClass = 'fa-columns';
+                else if (slide.layout === 'Highlighted_Numbers') iconClass = 'fa-arrow-up-right-dots';
+                else if (slide.layout === 'Quote') iconClass = 'fa-quote-left';
+                else if (slide.layout === 'Q&A') iconClass = 'fa-circle-question';
+
+                container.innerHTML += `
+                    <div onclick="selectSlide(${i})" class="group cursor-pointer border rounded-xl p-3 flex items-center gap-3 transition ${activeClasses}">
+                        <div class="w-8 h-8 rounded-lg bg-slate-900 flex items-center justify-center border border-slate-700/50 group-hover:border-blue-500/50 transition">
+                            <i class="fa-solid ${iconClass} text-xs text-blue-400"></i>
+                        </div>
+                        <div class="flex-grow min-w-0">
+                            <span class="text-[10px] font-semibold block text-slate-500">Slide ${i + 1}</span>
+                            <span class="text-xs text-slate-200 truncate block font-medium pr-2">${slide.title || 'Tanpa Judul'}</span>
+                        </div>
+                    </div>
+                `;
+            });
+
+            document.getElementById('slideCountLabel').innerText = `${presentationData.length} Slide`;
+        }
+
+        // Active Theme Indicator Sync
+        function updateThemeSelectorUI() {
+            document.querySelectorAll('.theme-btn').forEach(btn => {
+                btn.classList.remove('border-blue-500', 'border-2');
+                btn.classList.add('border-slate-800');
+            });
+            const activeBtn = document.querySelector(`[onclick="setTheme('${currentTheme}')"]`);
+            if (activeBtn) {
+                activeBtn.classList.remove('border-slate-800');
+                activeBtn.classList.add('border-blue-500', 'border-2');
+            }
+        }
+
+        // Change global presentation theme
+        function setTheme(themeName) {
+            currentTheme = themeName;
+            updateThemeSelectorUI();
+            renderActiveSlide();
+        }
+
+        // Handle text edit blur updates
+        function saveText(slideIdx, field, value, optIndex = null) {
+            if (optIndex !== null) {
+                presentationData[slideIdx].points[optIndex][field] = value;
+            } else {
+                presentationData[slideIdx][field] = value;
+            }
+            // Update left panel to capture updated title live
+            renderSlideList();
+        }
+
+        // Core Render Engine
+        function renderActiveSlide(targetContainerId = 'slideBody', isFullView = false, forceSlideIdx = null) {
+            const index = forceSlideIdx !== null ? forceSlideIdx : activeSlideIndex;
+            const slide = presentationData[index];
+            const t = themes[currentTheme];
+            
+            // Container dynamic classes
+            const container = isFullView ? document.getElementById('presentViewport') : document.getElementById('slideViewport');
+            const bgElement = isFullView ? document.getElementById('presentBackground') : document.getElementById('slideBackground');
+            
+            container.className = `w-full max-w-4xl preview-aspect ${t.bgColor} border border-slate-800/20 rounded-2xl shadow-2xl relative overflow-hidden transition-all duration-300 flex flex-col justify-between p-12 select-text ${t.bodyFont}`;
+            if (isFullView) {
+                container.className = `w-[1280px] h-[720px] aspect-[16/9] ${t.bgColor} relative overflow-hidden flex flex-col justify-between p-12 select-none ${t.bodyFont}`;
+            }
+            
+            bgElement.className = `absolute inset-0 pointer-events-none transition-all duration-500 ${t.glowEffect}`;
+
+            const target = document.getElementById(targetContainerId);
+            target.innerHTML = ''; // reset slide view
+
+            // Add slide top title bar
+            let slideHeader = '';
+            if (slide.layout !== 'Title_Slide' && slide.layout !== 'Q&A') {
+                slideHeader = `
+                    <div class="mb-4 ${t.borderLeft} pl-4">
+                        <h2 contenteditable="true" onblur="saveText(${index}, 'title', this.innerText)" class="${t.titleFont} text-3xl font-bold tracking-tight ${t.titleColor} focus:outline-none focus:ring-1 focus:ring-blue-500 rounded px-1">${slide.title}</h2>
+                    </div>
+                `;
+            }
+
+            let bodyHTML = '';
+            
+            // Select layout structure rendering
+            if (slide.layout === 'Title_Slide') {
+                bodyHTML = `
+                    <div class="flex-grow flex flex-col justify-center items-center text-center max-w-3xl mx-auto my-auto h-full">
+                        <h1 contenteditable="true" onblur="saveText(${index}, 'title', this.innerText)" class="${t.titleFont} text-4xl sm:text-5xl font-extrabold tracking-tight ${t.titleColor} mb-6 focus:outline-none focus:ring-1 focus:ring-blue-500 rounded px-1">${slide.title}</h1>
+                        <p contenteditable="true" onblur="saveText(${index}, 'subtitle', this.innerText)" class="text-lg ${t.subtitleColor} leading-relaxed focus:outline-none focus:ring-1 focus:ring-blue-500 rounded px-1">${slide.subtitle}</p>
+                    </div>
+                `;
+            } else if (slide.layout === 'Tiled_Text_With_Icons') {
+                let cardsHTML = '';
+                slide.points.forEach((pt, i) => {
+                    cardsHTML += `
+                        <div class="flex-1 ${t.tileBg} border rounded-xl p-5 flex flex-col items-center text-center">
+                            <div class="mb-3 text-2xl ${t.accentColor}">
+                                <i class="fa-solid ${pt.icon || 'fa-circle'}"></i>
+                            </div>
+                            <h3 contenteditable="true" onblur="saveText(${index}, 'header', this.innerText, ${i})" class="text-base font-semibold ${t.titleColor} mb-2 focus:outline-none focus:ring-1 focus:ring-blue-500 rounded w-full">${pt.header}</h3>
+                            <p contenteditable="true" onblur="saveText(${index}, 'text', this.innerText, ${i})" class="text-xs ${t.subtitleColor} leading-relaxed focus:outline-none focus:ring-1 focus:ring-blue-500 rounded w-full">${pt.text}</p>
+                        </div>
+                    `;
+                });
+                bodyHTML = `
+                    <div class="flex-grow flex flex-col justify-center">
+                        ${slideHeader}
+                        <div class="grid grid-cols-3 gap-4 mt-2">
+                            ${cardsHTML}
+                        </div>
+                    </div>
+                `;
+            } else if (slide.layout === 'Two_Column_Tiled_Text') {
+                let columnsHTML = '';
+                slide.points.slice(0, 2).forEach((pt, i) => {
+                    columnsHTML += `
+                        <div class="flex-1 ${t.tileBg} border rounded-xl p-6 flex flex-col justify-center">
+                            <h3 contenteditable="true" onblur="saveText(${index}, 'header', this.innerText, ${i})" class="text-lg font-bold ${t.titleColor} mb-3 border-b border-slate-750/50 pb-2 focus:outline-none focus:ring-1 focus:ring-blue-500 rounded w-full">${pt.header}</h3>
+                            <p contenteditable="true" onblur="saveText(${index}, 'text', this.innerText, ${i})" class="text-sm ${t.subtitleColor} leading-relaxed focus:outline-none focus:ring-1 focus:ring-blue-500 rounded w-full">${pt.text}</p>
+                        </div>
+                    `;
+                });
+                bodyHTML = `
+                    <div class="flex-grow flex flex-col justify-center">
+                        ${slideHeader}
+                        <div class="grid grid-cols-2 gap-6 mt-2">
+                            ${columnsHTML}
+                        </div>
+                    </div>
+                `;
+            } else if (slide.layout === 'Highlighted_Numbers') {
+                const pt = slide.points[0] || { header: "Fokus Utama Data", text: "Detail data pendukung metrik ini." };
+                bodyHTML = `
+                    <div class="flex-grow flex flex-col justify-center">
+                        ${slideHeader}
+                        <div class="grid grid-cols-12 gap-6 items-center mt-2">
+                            <div class="col-span-5 text-center border-r border-slate-800/40 pr-6">
+                                <span contenteditable="true" onblur="saveText(${index}, 'metric', this.innerText)" class="text-7xl font-extrabold ${t.accentColor} tracking-tight block focus:outline-none focus:ring-1 focus:ring-blue-500 rounded">${slide.metric || '10x'}</span>
+                                <span contenteditable="true" onblur="saveText(${index}, 'metricLabel', this.innerText)" class="text-xs font-semibold ${t.titleColor} mt-2 block focus:outline-none focus:ring-1 focus:ring-blue-500 rounded">${slide.metricLabel || 'Metrik Utama'}</span>
+                            </div>
+                            <div class="col-span-7 pl-4">
+                                <h3 contenteditable="true" onblur="saveText(${index}, 'header', this.innerText, 0)" class="text-xl font-bold ${t.titleColor} mb-2 focus:outline-none focus:ring-1 focus:ring-blue-500 rounded">${pt.header}</h3>
+                                <p contenteditable="true" onblur="saveText(${index}, 'text', this.innerText, 0)" class="text-sm ${t.subtitleColor} leading-relaxed focus:outline-none focus:ring-1 focus:ring-blue-500 rounded">${pt.text}</p>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            } else if (slide.layout === 'Quote') {
+                bodyHTML = `
+                    <div class="flex-grow flex flex-col justify-center items-center text-center max-w-2xl mx-auto my-auto">
+                        <div class="${t.accentColor} text-4xl mb-2 opacity-50"><i class="fa-solid fa-quote-left"></i></div>
+                        <blockquote contenteditable="true" onblur="saveText(${index}, 'quote', this.innerText)" class="text-xl sm:text-2xl italic font-medium ${t.titleColor} leading-relaxed focus:outline-none focus:ring-1 focus:ring-blue-500 rounded px-2 mb-4">${slide.quote}</blockquote>
+                        <cite contenteditable="true" onblur="saveText(${index}, 'author', this.innerText)" class="text-xs tracking-wider uppercase font-semibold ${t.accentColor} not-italic focus:outline-none focus:ring-1 focus:ring-blue-500 rounded px-2">— ${slide.author}</cite>
+                    </div>
+                `;
+            } else if (slide.layout === 'Q&A') {
+                bodyHTML = `
+                    <div class="flex-grow flex flex-col justify-center items-center text-center max-w-2xl mx-auto my-auto h-full">
+                        <span class="inline-block px-3 py-1 text-[10px] uppercase font-bold tracking-widest ${t.accentColor} bg-slate-800/50 rounded-full mb-3">Tanya Jawab</span>
+                        <h1 contenteditable="true" onblur="saveText(${index}, 'title', this.innerText)" class="${t.titleFont} text-4xl font-extrabold ${t.titleColor} mb-3 focus:outline-none focus:ring-1 focus:ring-blue-500 rounded w-full">${slide.title}</h1>
+                        <p contenteditable="true" onblur="saveText(${index}, 'subtitle', this.innerText)" class="text-sm ${t.subtitleColor} mb-8 focus:outline-none focus:ring-1 focus:ring-blue-500 rounded w-full">${slide.subtitle}</p>
+                        
+                        <div class="flex items-center gap-6 border-t border-slate-800/60 pt-6 w-full justify-center text-xs">
+                            <span class="flex items-center gap-2 ${t.titleColor}">
+                                <i class="fa-solid fa-envelope ${t.accentColor}"></i>
+                                <span contenteditable="true" onblur="saveText(${index}, 'contactEmail', this.innerText)" class="focus:outline-none focus:ring-1 focus:ring-blue-500 rounded">${slide.contactEmail || 'halo@domain.id'}</span>
+                            </span>
+                            <span class="flex items-center gap-2 ${t.titleColor}">
+                                <i class="fa-solid fa-globe ${t.accentColor}"></i>
+                                <span contenteditable="true" onblur="saveText(${index}, 'contactWeb', this.innerText)" class="focus:outline-none focus:ring-1 focus:ring-blue-500 rounded">${slide.contactWeb || 'www.webppt.id'}</span>
+                            </span>
+                        </div>
+                    </div>
+                `;
+            }
+
+            target.innerHTML = bodyHTML;
+
+            // Simple slide footer branding and navigation count
+            const footerHTML = `
+                <div class="relative z-10 flex items-center justify-between border-t border-slate-800/10 pt-3 mt-4 w-full text-[10px] text-slate-500 uppercase tracking-wider">
+                    <span>Dibuat dengan WebPPT</span>
+                    <span>Slide ${index + 1} dari ${presentationData.length}</span>
+                </div>
+            `;
+            target.innerHTML += footerHTML;
+
+            // Refresh indicator texts
+            if (!isFullView) {
+                document.getElementById('slideIndicator').innerText = `Slide ${index + 1} / ${presentationData.length}`;
+            } else {
+                document.getElementById('presentIndicator').innerText = `${index + 1} / ${presentationData.length}`;
+            }
+        }
+
+        // Active Slide Set Call
+        function selectSlide(index) {
+            activeSlideIndex = index;
+            renderSlideList();
+            renderActiveSlide();
+        }
+
+        // Slide list navigation
+        function prevSlide() {
+            if (activeSlideIndex > 0) {
+                activeSlideIndex--;
+                renderSlideList();
+                renderActiveSlide();
+            }
+        }
+
+        function nextSlide() {
+            if (activeSlideIndex < presentationData.length - 1) {
+                activeSlideIndex++;
+                renderSlideList();
+                renderActiveSlide();
+            }
+        }
+
+        // Slide navigation during fullscreen show
+        function prevSlidePresent() {
+            if (activeSlideIndex > 0) {
+                activeSlideIndex--;
+                renderActiveSlide('presentBody', true);
+            }
+        }
+
+        function nextSlidePresent() {
+            if (activeSlideIndex < presentationData.length - 1) {
+                activeSlideIndex++;
+                renderActiveSlide('presentBody', true);
+            }
+        }
+
+        // Reorder list: Move active up
+        function moveSlideUp() {
+            if (activeSlideIndex > 0) {
+                const temp = presentationData[activeSlideIndex];
+                presentationData[activeSlideIndex] = presentationData[activeSlideIndex - 1];
+                presentationData[activeSlideIndex - 1] = temp;
+                activeSlideIndex--;
+                renderSlideList();
+                renderActiveSlide();
+            }
+        }
+
+        // Reorder list: Move active down
+        function moveSlideDown() {
+            if (activeSlideIndex < presentationData.length - 1) {
+                const temp = presentationData[activeSlideIndex];
+                presentationData[activeSlideIndex] = presentationData[activeSlideIndex + 1];
+                presentationData[activeSlideIndex + 1] = temp;
+                activeSlideIndex++;
+                renderSlideList();
+                renderActiveSlide();
+            }
+        }
+
+        // Change the current slide's structural layout
+        function changeActiveLayout(newLayout) {
+            const currentSlide = presentationData[activeSlideIndex];
+            currentSlide.layout = newLayout;
+            
+            // Build default points or default variables so swap is flawless and text isn't empty
+            if (newLayout === 'Tiled_Text_With_Icons' && currentSlide.points.length < 3) {
+                currentSlide.points = [
+                    { header: "Fitur Pertama", text: "Tulis kelebihan pertama dari ide presentasi Anda.", icon: "fa-star" },
+                    { header: "Fitur Kedua", text: "Tulis kelebihan kedua dari ide presentasi Anda.", icon: "fa-rocket" },
+                    { header: "Fitur Ketiga", text: "Tulis kelebihan ketiga dari ide presentasi Anda.", icon: "fa-bolt" }
+                ];
+            } else if (newLayout === 'Two_Column_Tiled_Text' && currentSlide.points.length < 2) {
+                currentSlide.points = [
+                    { header: "Analisis Sisi Kiri", text: "Detail perbandingan atau pembahasan konsep pertama." },
+                    { header: "Analisis Sisi Kanan", text: "Detail perbandingan atau pembahasan konsep kedua." }
+                ];
+            } else if (newLayout === 'Highlighted_Numbers') {
+                currentSlide.metric = currentSlide.metric || "100%";
+                currentSlide.metricLabel = currentSlide.metricLabel || "Peningkatan Efektivitas";
+                if (currentSlide.points.length === 0) {
+                    currentSlide.points = [{ header: "Pencapaian Penting", text: "Uraikan detail statistik data penting ini." }];
+                }
+            } else if (newLayout === 'Quote') {
+                currentSlide.quote = currentSlide.quote || "Langkah pertama adalah meyakini bahwa segala sesuatu mungkin terjadi.";
+                currentSlide.author = currentSlide.author || "Nama Tokoh";
+            } else if (newLayout === 'Q&A') {
+                currentSlide.contactEmail = currentSlide.contactEmail || "halo@perusahaan.com";
+                currentSlide.contactWeb = currentSlide.contactWeb || "www.perusahaan.com";
+            }
+
+            renderSlideList();
+            renderActiveSlide();
+        }
+
+        // Add blank slide
+        function addNewSlide() {
+            presentationData.push({
+                id: `slide_${Date.now()}`,
+                layout: "Two_Column_Tiled_Text",
+                title: "Topik Slide " + (presentationData.length + 1),
+                subtitle: "",
+                points: [
+                    { header: "Gagasan Pertama", text: "Silakan edit teks ini untuk menjelaskan poin presentasi pertama." },
+                    { header: "Gagasan Kedua", text: "Silakan edit teks ini untuk menjelaskan poin presentasi kedua." }
+                ],
+                metric: "",
+                metricLabel: "",
+                quote: "",
+                author: "",
+                contactEmail: "",
+                contactWeb: ""
+            });
+            activeSlideIndex = presentationData.length - 1;
+            renderSlideList();
+            renderActiveSlide();
+        }
+
+        // Duplicate slide
+        function duplicateActiveSlide() {
+            const current = presentationData[activeSlideIndex];
+            const duplicate = JSON.parse(JSON.stringify(current));
+            duplicate.id = `slide_${Date.now()}`;
+            presentationData.splice(activeSlideIndex + 1, 0, duplicate);
+            activeSlideIndex++;
+            renderSlideList();
+            renderActiveSlide();
+        }
+
+        // Delete active slide
+        function deleteActiveSlide() {
+            if (presentationData.length <= 1) {
+                alert("Minimal presentasi harus memiliki 1 slide!");
+                return;
+            }
+            presentationData.splice(activeSlideIndex, 1);
+            if (activeSlideIndex >= presentationData.length) {
+                activeSlideIndex = presentationData.length - 1;
+            }
+            renderSlideList();
+            renderActiveSlide();
+        }
+
+        // Fullscreen presenters modal handlers
+        function enterPresentMode() {
+            isPresentMode = true;
+            document.getElementById('presentModal').classList.remove('hidden');
+            
+            const elem = document.getElementById('presentViewport');
+            if (elem.requestFullscreen) {
+                elem.requestFullscreen();
+            } else if (elem.webkitRequestFullscreen) { /* Safari */
+                elem.webkitRequestFullscreen();
+            } else if (elem.msRequestFullscreen) { /* IE11 */
+                elem.msRequestFullscreen();
+            }
+
+            renderActiveSlide('presentBody', true);
+
+            document.addEventListener('fullscreenchange', exitHandler);
+            document.addEventListener('webkitfullscreenchange', exitHandler);
+        }
+
+        function exitHandler() {
+            if (!document.fullscreenElement && !document.webkitFullscreenElement) {
+                exitPresentMode();
+            }
+        }
+
+        function exitPresentMode() {
+            isPresentMode = false;
+            document.getElementById('presentModal').classList.add('hidden');
+            renderActiveSlide();
+        }
+
+        // Trigger Import File Dialog
+        function triggerImport() {
+            document.getElementById('importFileInput').click();
+        }
+
+        // Import project layout (JSON)
+        function importProjectJSON(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                try {
+                    const parsed = JSON.parse(e.target.result);
+                    if (Array.isArray(parsed) && parsed.length > 0) {
+                        presentationData = parsed;
+                        activeSlideIndex = 0;
+                        renderSlideList();
+                        renderActiveSlide();
+                        alert("Proyek presentasi berhasil dimuat!");
+                    } else {
+                        alert("Format file tidak valid.");
+                    }
+                } catch (err) {
+                    alert("Gagal membaca file proyek.");
+                }
+            };
+            reader.readAsText(file);
+        }
+
+        // Save raw layout (JSON) offline
+        function exportProjectJSON() {
+            const dataStr = JSON.stringify(presentationData, null, 2);
+            const blob = new Blob([dataStr], { type: 'application/json' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `Proyek_WebPPT_${presentationData[0].title.replace(/\s+/g, '_')}.json`;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+        }
+
+        // Compile complete offline interactive slide deck (HTML)
+        function exportPresentation() {
+            const t = themes[currentTheme];
+            let slidesHTML = '';
+            
+            presentationData.forEach((slide, idx) => {
+                let bodyHTML = '';
+                let slideHeader = '';
+                
+                if (slide.layout !== 'Title_Slide' && slide.layout !== 'Q&A') {
+                    slideHeader = `
+                        <div class="mb-4 ${t.borderLeft} pl-4">
+                            <h2 class="${t.titleFont} text-4xl font-bold tracking-tight ${t.titleColor}">${slide.title}</h2>
+                        </div>
+                    `;
+                }
+
+                if (slide.layout === 'Title_Slide') {
+                    bodyHTML = `
+                        <div class="flex-grow flex flex-col justify-center items-center text-center max-w-3xl mx-auto my-auto h-full">
+                            <h1 class="${t.titleFont} text-6xl font-extrabold tracking-tight ${t.titleColor} mb-6">${slide.title}</h1>
+                            <p class="text-xl ${t.subtitleColor} leading-relaxed">${slide.subtitle}</p>
+                        </div>
+                    `;
+                } else if (slide.layout === 'Tiled_Text_With_Icons') {
+                    let cardsHTML = '';
+                    slide.points.forEach((pt) => {
+                        cardsHTML += `
+                            <div class="flex-1 ${t.tileBg} border rounded-xl p-6 flex flex-col items-center text-center">
+                                <div class="mb-3 text-3xl ${t.accentColor}">
+                                    <i class="fa-solid ${pt.icon || 'fa-star'}"></i>
+                                </div>
+                                <h3 class="text-lg font-semibold ${t.titleColor} mb-2">${pt.header}</h3>
+                                <p class="text-xs ${t.subtitleColor} leading-relaxed">${pt.text}</p>
+                            </div>
+                        `;
+                    });
+                    bodyHTML = `
+                        <div class="flex-grow flex flex-col justify-center">
+                            ${slideHeader}
+                            <div class="grid grid-cols-3 gap-6 mt-4">
+                                ${cardsHTML}
+                            </div>
+                        </div>
+                    `;
+                } else if (slide.layout === 'Two_Column_Tiled_Text') {
+                    let columnsHTML = '';
+                    slide.points.slice(0, 2).forEach((pt) => {
+                        columnsHTML += `
+                            <div class="flex-1 ${t.tileBg} border rounded-xl p-8 flex flex-col justify-center">
+                                <h3 class="text-xl font-bold ${t.titleColor} mb-4 border-b border-slate-700/50 pb-2">${pt.header}</h3>
+                                <p class="text-sm ${t.subtitleColor} leading-relaxed">${pt.text}</p>
+                            </div>
+                        `;
+                    });
+                    bodyHTML = `
+                        <div class="flex-grow flex flex-col justify-center">
+                            ${slideHeader}
+                            <div class="grid grid-cols-2 gap-8 mt-4">
+                                ${columnsHTML}
+                            </div>
+                        </div>
+                    `;
+                } else if (slide.layout === 'Highlighted_Numbers') {
+                    const pt = slide.points[0] || { header: "Fokus Utama Data", text: "Detail data pendukung metrik ini." };
+                    bodyHTML = `
+                        <div class="flex-grow flex flex-col justify-center">
+                            ${slideHeader}
+                            <div class="grid grid-cols-12 gap-8 items-center mt-4">
+                                <div class="col-span-5 text-center border-r border-slate-800/40 pr-8">
+                                    <span class="text-8xl font-extrabold ${t.accentColor} tracking-tight block">${slide.metric || '10x'}</span>
+                                    <span class="text-lg font-semibold ${t.titleColor} mt-2 block">${slide.metricLabel || 'Metrik Utama'}</span>
+                                </div>
+                                <div class="col-span-7 pl-6">
+                                    <h3 class="text-2xl font-bold ${t.titleColor} mb-3">${pt.header}</h3>
+                                    <p class="text-sm ${t.subtitleColor} leading-relaxed">${pt.text}</p>
+                                </div>
+                            </div>
+                        </div>
+                    `;
+                } else if (slide.layout === 'Quote') {
+                    bodyHTML = `
+                        <div class="flex-grow flex flex-col justify-center items-center text-center max-w-3xl mx-auto my-auto">
+                            <div class="${t.accentColor} text-5xl mb-4 opacity-50"><i class="fa-solid fa-quote-left"></i></div>
+                            <blockquote class="text-2xl sm:text-3xl italic font-medium ${t.titleColor} leading-relaxed mb-6">"${slide.quote}"</blockquote>
+                            <cite class="text-xs tracking-wider uppercase font-semibold ${t.accentColor} not-italic">— ${slide.author}</cite>
+                        </div>
+                    `;
+                } else if (slide.layout === 'Q&A') {
+                    bodyHTML = `
+                        <div class="flex-grow flex flex-col justify-center items-center text-center max-w-3xl mx-auto my-auto h-full">
+                            <span class="inline-block px-4 py-1 text-[10px] uppercase font-bold tracking-widest ${t.accentColor} bg-slate-800/50 rounded-full mb-4">Tanya Jawab</span>
+                            <h1 class="${t.titleFont} text-5xl font-extrabold ${t.titleColor} mb-4">${slide.title}</h1>
+                            <p class="text-base ${t.subtitleColor} mb-10">${slide.subtitle}</p>
+                            
+                            <div class="flex items-center gap-8 border-t border-slate-800/60 pt-8 w-full justify-center text-xs">
+                                <span class="flex items-center gap-2 ${t.titleColor}">
+                                    <i class="fa-solid fa-envelope ${t.accentColor}"></i>
+                                    <span>${slide.contactEmail || 'halo@domain.com'}</span>
+                                </span>
+                                <span class="flex items-center gap-2 ${t.titleColor}">
+                                    <i class="fa-solid fa-globe ${t.accentColor}"></i>
+                                    <span>${slide.contactWeb || 'www.domain.com'}</span>
+                                </span>
+                            </div>
+                        </div>
+                    `;
+                }
+
+                slidesHTML += `
+                    <!-- Slide ${idx + 1} -->
+                    <div class="slide ${idx === 0 ? 'active' : ''} w-[1280px] h-[720px] aspect-[16/9] ${t.bgColor} p-16 flex flex-col justify-between relative overflow-hidden shrink-0">
+                        <div class="absolute inset-0 pointer-events-none ${t.glowEffect}"></div>
+                        <div class="relative z-10 w-full h-full flex flex-col justify-between">
+                            ${bodyHTML}
+                            
+                            <div class="relative z-10 flex items-center justify-between border-t border-slate-800/10 pt-4 mt-4 w-full text-[10px] text-slate-500 uppercase tracking-wider">
+                                <span>Presentasi WebPPT</span>
+                                <span>Halaman ${idx + 1} dari ${presentationData.length}</span>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            });
+
+            // Raw full page document compilation
+            const htmlDocument = `<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Presentasi: ${presentationData[0].title}</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&family=Space+Grotesk:wght@600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['"Plus Jakarta Sans"', 'sans-serif'],
+                        display: ['"Space Grotesk"', 'sans-serif'],
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        body {
+            margin: 0;
+            background-color: #020617;
+            color: #f1f5f9;
+            font-family: 'Plus Jakarta Sans', sans-serif;
+            overflow: hidden;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+        }
+        .slide {
+            display: none;
+        }
+        .slide.active {
+            display: flex;
+        }
+        @media (max-width: 1280px) {
+            #presentation-frame {
+                transform: scale(calc(100vw / 1280));
+                transform-origin: center center;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <div id="presentation-frame" class="w-[1280px] h-[720px] shadow-2xl relative">
+        ${slidesHTML}
+    </div>
+
+    <!-- Floating navigation HUD -->
+    <div class="fixed bottom-6 left-1/2 -translate-x-1/2 flex items-center gap-4 bg-slate-900/90 border border-slate-800 px-5 py-3 rounded-full shadow-2xl backdrop-blur-md">
+        <button onclick="prevSlide()" class="text-slate-300 hover:text-white px-3 transition"><i class="fa-solid fa-chevron-left text-sm"></i></button>
+        <span id="slideIndicator" class="text-xs text-slate-400 font-bold tracking-widest uppercase">1 / ${presentationData.length}</span>
+        <button onclick="nextSlide()" class="text-slate-300 hover:text-white px-3 transition"><i class="fa-solid fa-chevron-right text-sm"></i></button>
+        <div class="h-4 w-px bg-slate-800"></div>
+        <button onclick="toggleFullscreen()" class="text-xs text-blue-400 hover:text-blue-300 font-semibold px-3 flex items-center gap-1.5">
+            <i class="fa-solid fa-expand"></i> Layar Penuh
+        </button>
+    </div>
+
+    <script>
+        let currentIndex = 0;
+        const slides = document.querySelectorAll('.slide');
+        
+        function showSlide(index) {
+            slides.forEach((slide, i) => {
+                slide.classList.toggle('active', i === index);
+            });
+            document.getElementById('slideIndicator').innerText = (index + 1) + ' / ' + slides.length;
+        }
+
+        function prevSlide() {
+            if (currentIndex > 0) {
+                currentIndex--;
+                showSlide(currentIndex);
+            }
+        }
+
+        function nextSlide() {
+            if (currentIndex < slides.length - 1) {
+                currentIndex++;
+                showSlide(currentIndex);
+            }
+        }
+
+        function toggleFullscreen() {
+            const elem = document.documentElement;
+            if (!document.fullscreenElement) {
+                if (elem.requestFullscreen) elem.requestFullscreen();
+            } else {
+                if (document.exitFullscreen) document.exitFullscreen();
+            }
+        }
+
+        // Arrow Key & Space Bar listeners
+        document.addEventListener('keydown', function(e) {
+            if (e.key === 'ArrowRight' || e.key === ' ') nextSlide();
+            if (e.key === 'ArrowLeft') prevSlide();
+        });
+    <\/script>
+</body>
+</html>`;
+
+            // Auto-trigger Download
+            const blob = new Blob([htmlDocument], { type: 'text/html' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `Presentasi_${presentationData[0].title.replace(/\s+/g, '_')}.html`;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+        }
+    </script>
+</body>
+</html>
+
+```
